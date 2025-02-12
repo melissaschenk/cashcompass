@@ -1,0 +1,133 @@
+body {
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  .container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive grid */
+    grid-gap: 10px; /* Gap between boxes */
+  }
+  
+  .box {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 3px;
+    margin-bottom: 10px;
+  }
+
+  /* Style the tab */
+  .tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+  }
+
+  /* Style the buttons that are used to open the tab content */
+  .tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  }
+
+  /* Change background color of buttons on hover */
+  .tab button:hover {
+  background-color: #ddd;
+  }
+
+  /* Create an active/current tablink class */
+  .tab button.active {
+  background-color: #ccc;
+  }
+
+  /* Style the tab content */
+  .tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+  }    
+  .tabcontent {
+  animation: fadeEffect 1s; /* Fading effect takes 1 second */
+  }
+
+  /* Go from zero to full opacity */
+  @keyframes fadeEffect {
+  from {opacity: 0;}
+  to {opacity: 1;}
+  }
+
+
+
+  /* filter buttons style */
+  .filter-buttons {
+    display: flex;
+    gap: 10px; /* Adjust spacing between buttons */
+  }
+
+  .filter-buttons button {
+    padding: 8px 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+  }
+
+  .filter-buttons button:hover {
+    background-color: #3880b3;
+    color: white;
+  }
+  .filter-button.selected {
+    background-color: #3880b3; /* blue */
+    color: white;
+  }
+  
+  
+  .date-filter-container {
+    position: relative; /* Needed for absolute positioning within */
+    width: 200px;
+    height: 50px;
+    text-align: right;
+    font-weight: bold;
+    
+  }
+
+  .top-right {
+    float: right;
+    position: absolute; /* absolutely position the element within its parent*/
+    top: 30px;
+    right: 15px;
+  }
+
+  select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    font-family: sans-serif; /* or any other preferred font */
+    background-color: white;
+    color: #333;    
+    width: 200px; /* adjust as needed */
+    margin-top: 15px;
+  }
+
+  .spending-container {
+    position: relative;
+    padding: 15px;
+    margin: 15px;
+    float: right;
+  }
+  
+  .spending-info {
+    /* top: 10px;
+    right: 10px; */
+    text-align: right; /* Align the text right */
+      font-size: 1em;
+      color: #555;
+  }
+  .spending-info > span {
+   display: block; /* make each span appear on its own line*/
+  
+  }

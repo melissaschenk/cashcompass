@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Cash Compass </title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" type="text/css"  href="css/style.css">
+  <script src="script.js" defer></script>
+
+  <style>
+  
+
+    </style>
+
+
+</head>
+<body>
+  <header>
+    <h1>Cash Compass</h1>
+  </header>  
+  <main>
+    
+
+    <section>
+
+      <div class="kpi-container" id="kpis">
+        <!-- KPIs will be rendered here -->
+      </div>
+
+
+    </section>
+
+    <select id="dateFilterDropdown"> </select> <div id="dateFilterContainer" class="date-filter-container"></div>
+
+    <section class="chart-container">
+        <div class="chart">
+            <h2 id="ChartLabelSpender1"></h2>
+            <canvas id="spendingChart1"></canvas>
+        </div>
+         <div class="chart">
+            <h2 id="ChartLabelSpender0"></h2>
+            <canvas id="spendingChart0"></canvas>
+        </div>
+          <div class="chart">
+            <h2></h2>
+            <canvas id="checkingChart"></canvas>
+        </div>
+        <div class="chart">
+          <h2></h2>
+          <canvas id="savingsChart"></canvas>
+      </div>
+        
+    </section>
+      <section class="detail-container">
+         <h2>Details View</h2>
+        <div id="detailContent">
+           <p>Select a chart element to see details.</p>
+
+
+        </div>
+
+        <div class="container" id="spending">
+  
+          <!-- Tab links -->
+          <div class="tab">
+              <button class="tablinks" onclick="openCity(event, 'MelissaSpending')" id="DetailsViewSpender1"></button>
+              <button class="tablinks" onclick="openCity(event, 'AdamSpending')" id="DetailsViewSpender0"></button>
+              <button class="tablinks" onclick="openCity(event, 'MelissaSpendingCategory')">Trends</button>
+          </div>
+          
+          <!-- Tab content -->
+          <div id="MelissaSpending" class="tabcontent" >
+              <div id="spendingDetails1" style="overflow: auto;">
+                
+              </div>
+          </div>
+          
+          <div id="MelissaSpendingCategory" class="tabcontent">
+            <select name="category" id="category-select1"></select>
+
+            <section class="chart-container">
+              <div class="chart">
+                <h3 id="SpendingCategoryLabelSpender1"></h3>
+                <div id="average-spending-1" class="spending-container"></div>
+                
+                
+                <canvas id="monthly-summary-chart-1"></canvas>
+                <div id="monthly-summary-1"></div>
+              </div>
+              <div class="chart">
+                <h3 id="SpendingCategoryLabelSpender0"></h3>
+                <div id="average-spending-0" class="spending-container"></div>
+                
+                <canvas id="monthly-summary-chart-0"></canvas>
+                <div id="monthly-summary-0"></div>
+              </div>
+            </section>
+
+          
+            
+
+
+            
+            
+          </div>
+    
+          <div id="AdamSpending" class="tabcontent">
+            <div id="spendingDetails0" style="overflow: auto;"></div>
+          </div>
+
+        </div>
+  
+      </div>         
+    </section>
+</main>
+
+
+
+
+
+
+
+
+
+
+
+      <div class="filter-buttons" style="display: none;">
+        <!-- <button class="filter-button" onclick="refreshDashboard('M_1')">Jan</button>
+        <button class="filter-button" onclick="refreshDashboard('M_2')">Feb</button>
+        <button class="filter-button" onclick="refreshDashboard('M_3')">Mar</button>
+        <button class="filter-button" onclick="refreshDashboard('M_4')">Apr</button>
+        <button class="filter-button" onclick="refreshDashboard('M_5')">May</button>
+        <button class="filter-button" onclick="refreshDashboard('M_6')">Jun</button>
+        <button class="filter-button" onclick="refreshDashboard('M_7')">Jul</button>
+        <button class="filter-button" onclick="refreshDashboard('M_8')">Aug</button>
+        <button class="filter-button" onclick="refreshDashboard('M_9')">Sep</button>
+        <button class="filter-button" onclick="refreshDashboard('M_10')">Oct</button>
+        <button class="filter-button" onclick="refreshDashboard('M_11')">Nov</button>
+        <button class="filter-button" onclick="refreshDashboard('M_12')">Dec</button> -->
+
+        <button class="filter-button" onclick="refreshDashboard('last30Days')" id="filter-button-last30days">1 Mo</button>
+        <!-- <button class="filter-button" onclick="refreshDashboard('last3Months')">3 Mo</button>
+        <button class="filter-button" onclick="refreshDashboard('last6Months')">6 Mo</button>
+        <button class="filter-button" onclick="refreshDashboard('ytd')">YTD</button>
+        <button class="filter-button" onclick="refreshDashboard('lastYear')" style="display: normal;">1 Yr</button>
+        <button class="filter-button" onclick="refreshDashboard('last2Years')" style="display: normal;">2 Yr</button> -->
+        
+      </div>
+      
+
+
+
+
+  
+   
+<script>
+
+  let selectedFilter = '';
+
+  function refreshDashboard(filter) {
+    fetchSpending(filter,1);
+    fetchSpending(filter,0);
+    fetchKpis(filter);
+    fetchDateFilters(filter);
+    selectedFilter = filter;
+    
+  }
+
+  function refreshSpendingbyCategory(category) {
+    fetchSpendingbyCategory(category,1,selectedFilter);
+    fetchAverageSpendingbyCategory(category,1)
+
+    fetchSpendingbyCategory(category,0,selectedFilter);
+    fetchAverageSpendingbyCategory(category,0)
+  }
+  
+
+
+  function formatCurrency(value){ 
+      return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+      }).format(value);
+  }
+
+  function fetchDateFilters(filter) {
+  fetch(`/api/datefilter?filter=${filter}`)
+    .then(response => response.json())
+    .then(data => {
+
+      const dateFilterContainer = document.getElementById('dateFilterContainer');
+      dateFilterContainer.innerHTML = "";
+      const startDate = data.startDate
+      const endDate = data.endDate
+      // const formattedStartDate = `${data.startDate.getMonth() + 1}/${data.startDate.getDate()}/${data.startDate.getFullYear()}`;
+      // const formattedEndDate = `${data.endDate.getMonth() + 1}/${data.endDate.getDate()}/${data.endDate.getFullYear()}`;
+
+        const dateFilterDiv = document.createElement('div');
+        //kpiDiv.className = "box"
+        dateFilterDiv.innerHTML = `<span>${startDate}-${endDate} </span>`;
+        dateFilterContainer.appendChild(dateFilterDiv);
+     // });
+
+    });
+  }
+
+  function fetchKpis(filter) {
+  fetch(`/api/kpis?filter=${filter}`)
+    .then(response => response.json())
+    .then(data => {
+      const kpiContainer = document.getElementById('kpis');
+      kpiContainer.innerHTML = "";
+      data.forEach(kpi => {
+        const kpiDiv = document.createElement('div');
+        kpiDiv.className = "kpi"
+        kpiDiv.innerHTML = `<h3>${kpi.name}</h3><p>${kpi.value}  <h5>${kpi.targetLabel}: ${kpi.target}</h5> </p><span style="font-weight: bold;color:${kpi.deltaLabelColor}">${kpi.deltaLabel} ${kpi.delta}</span>`;
+        kpiContainer.appendChild(kpiDiv);
+      });
+
+    })
+    .catch(error => console.error('Error fetching data:', error));
+}  
+
+
+  function fetchSpending(filter,spender) {
+  fetch(`/api/spending?filter=${filter}&spender=${spender}`)
+    .then(response => response.json())
+    .then(spedingChartData => {
+      if (spendingChart0 && spender == 0){
+        spendingChart0.destroy(); //destroy existing chart
+      }
+      if (spendingChart1 && spender == 1) {
+        spendingChart1.destroy(); //destroy existing chart
+      }
+      updateSpendingChart(spedingChartData,spender);
+
+      const spending_containerID = 'spendingDetails' + spender
+
+      const spendingDetailsContainer = document.getElementById(spending_containerID)
+      if (spendingDetailsContainer) {
+        spendingDetailsContainer.innerHTML = ""; 
+      }
+      spedingChartData.forEach(item => {
+        const spendingCategoryDiv = document.createElement('p');
+        spendingCategoryDiv.className = "category"
+        spendingCategoryDiv.innerHTML = `<h4>${item[0]} (${formatCurrency(item[1].total)})</h4>`;
+
+        let spendingTransactions = item[1].items
+        spendingTransactions.forEach(transaction => {
+          spendingCategoryDiv.innerHTML += `
+          <table style="width:100%"><tr>
+              <td style="width:10%">
+                  ${transaction.TransactionDate}
+              </td>
+              <td style="width:50%">
+                  ${transaction.Description} ${transaction.Memo}
+              </td>
+              <td style="width:20%">
+                  ${transaction.Type}
+              </td>
+              <td style="width:10%;text-align:right;">
+                  ${formatCurrency(transaction.Amount)}
+              </td>
+          </tr></table>`;
+
+        });
+        spendingDetailsContainer.appendChild(spendingCategoryDiv);
+      });
+
+    })
+    .catch(error => console.error('Error fetching data:', error));
+}
+
+function updateSpendingChart(spendingChartData,spender) {
+  //console.log(spendingChartData)
+  let labels = [];
+  let values = [];
+  spendingChartData.forEach(item => {
+      labels.push(item[0]);
+      values.push(item[1].total);
+
+  });
+
+  if (spender == 0)
+  {
+      spendingChart0 = new Chart(spendingctx0, {
+      type: 'bar',
+      data: {labels: labels,
+        datasets: [{
+        label: spenderLabelData.spender0 + ' Spending by Category',
+        data: values,
+        backgroundColor: 'orange'
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  if (spender == 1)
+  {
+    spendingChart1 = new Chart(spendingctx1, {
+      type: 'bar',
+      data: {labels: labels,
+        datasets: [{
+        label: spenderLabelData.spender1 +' Spending by Category',
+        data: values,
+        backgroundColor: '#45709F' //grey blue
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+
+
+}
+
+  const spendingctx0 = document.getElementById('spendingChart0').getContext('2d');
+  let spendingChart0;
+    
+  const spendingctx1 = document.getElementById('spendingChart1').getContext('2d');
+  let spendingChart1;
+
+  const monthlySpendingctx1 = document.getElementById('monthly-summary-chart-1').getContext('2d');
+  let monthlySpendingChart1;
+
+  const monthlySpendingctx0 = document.getElementById('monthly-summary-chart-0').getContext('2d');
+  let monthlySpendingChart0;
+
+  const checkingCtx = document.getElementById('checkingChart').getContext('2d');
+  const savingsCtx = document.getElementById('savingsChart').getContext('2d');
+  
+
+  const checkingData = <%- checkingData %>;
+  const savingsData = <%- savingsData %>;
+  const dateFilterDict = <%- dateFilterDict %>;
+  const spenderLabelData = <%- spenderLabelData %>;
+  
+  //set labels
+  const ChartLabelSpender1 = document.getElementById('ChartLabelSpender1')
+  ChartLabelSpender1.innerText = spenderLabelData.spender1 + ' Spending by Category'
+
+  const ChartLabelSpender0 = document.getElementById('ChartLabelSpender0')
+  ChartLabelSpender0.innerText = spenderLabelData.spender0 + ' Spending by Category'
+
+  const DetailsViewSpender1 = document.getElementById('DetailsViewSpender1')
+  DetailsViewSpender1.innerText = spenderLabelData.spender1 + ' Spending Details View'
+
+  const DetailsViewSpender0 = document.getElementById('DetailsViewSpender0')
+  DetailsViewSpender0.innerText = spenderLabelData.spender0 + ' Spending Details View'
+
+  
+
+  
+
+  const myCheckingChart = new Chart(checkingCtx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'Checking Value',
+        data: checkingData,
+        borderColor: 'blue',
+        fill: false
+      }]
+    },
+    options: {
+      scales: {
+        x: { type: 'category' }
+      }
+    }
+  });
+
+  new Chart(savingsCtx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'Savings Value',
+        data: savingsData,
+        borderColor: 'green',
+        fill: false
+      }]
+    },
+    options: {
+      scales: {
+        x: { type: 'category' }
+      }
+    }
+  });
+
+  //tabs
+  function openCity(evt, cityName) {
+      // Declare all variables
+      var i, tabcontent, tablinks;
+
+      // Get all elements with class="tabcontent" and hide them
+      tabcontent = document.getElementsByClassName("tabcontent");
+      for (i = 0; i < tabcontent.length; i++) {
+          tabcontent[i].style.display = "none";
+      }
+
+      // Get all elements with class="tablinks" and remove the class "active"
+      tablinks = document.getElementsByClassName("tablinks");
+      for (i = 0; i < tablinks.length; i++) {
+          tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+
+      // Show the current tab, and add an "active" class to the button that opened the tab
+      document.getElementById(cityName).style.display = "block";
+      evt.currentTarget.className += " active";
+  }
+
+  // Get the element with id="DetailsViewSpender1" and click on it
+  document.getElementById("DetailsViewSpender1").click();
+  document.getElementById("filter-button-last30days").click();
+  const defaultButton = document.getElementById('filter-button-last30days');
+
+  // Select the clicked button
+  defaultButton.classList.add('selected');
+
+
+  const buttons = document.querySelectorAll('.filter-button');
+
+  buttons.forEach(button => {
+    button.addEventListener('click', () => {
+      // Deselect all buttons
+      buttons.forEach(b => b.classList.remove('selected'));
+
+      // Select the clicked button
+      button.classList.add('selected');
+    });
+  });
+
+
+  //SPENDING BY CATEGORY SPENDER 1
+  const categorySelect = document.getElementById('category-select1');
+
+  categorySelect.addEventListener('change', (event) => {
+  const selectedCategory = event.target.value;
+  refreshSpendingbyCategory(selectedCategory)
+  });
+
+
+  //alert(selectedCategory + " selected"); 
+
+
+
+
+ 
+
+  // Function to Fetch Categories
+  const fetchCategories = async (spender) => {
+    try {
+      const response = await fetch('/api/categories/'+spender);
+      const categories = await response.json();
+
+      // populate dropdown
+        categories.forEach(category => {
+          const option = document.createElement('option');
+          option.value = category;
+          option.textContent = category;
+          categorySelect.appendChild(option);
+      });
+      
+    } catch (error) {
+      console.error("Error fetching categories", error)
+    }
+  };
+
+
+    // Function to fetch expenses and display in list
+const fetchAverageSpendingbyCategory = async (category,spender) => {
+   try {
+    const response = await fetch(`/api/average-spending/${category}/${spender}`)
+    const averageSpendingbycategory = await response.json()
+
+    console.log(averageSpendingbycategory);
+
+    let averageSpendingContainer 
+    if (spender == 1) {
+      averageSpendingContainer = document.getElementById('average-spending-1');
+    }
+    if (spender == 0) {
+      averageSpendingContainer = document.getElementById('average-spending-0');
+    }
+    
+    averageSpendingContainer.innerHTML = '' // Clear previous content
+    const spendingbyCategoryInfoDiv = document.createElement('div');
+    spendingbyCategoryInfoDiv.className = 'spending-info'
+    spendingbyCategoryInfoDiv.innerHTML = `<span>Total:   ${formatCurrency(averageSpendingbycategory.totalSpending)}</span>`
+    spendingbyCategoryInfoDiv.innerHTML += `<span>Avg/Mo:   ${formatCurrency(averageSpendingbycategory.averageSpending)}</span>`
+    averageSpendingContainer.appendChild(spendingbyCategoryInfoDiv);
+
+   }
+   catch(error){
+     console.error("Error fetching spending by category", error)
+   }
+ }
+
+
+
+  // Function to fetch expenses and display in list
+const fetchSpendingbyCategory = async (category,spender) => {
+   try{
+   if (category === "")  {
+        if (monthlySpendingChart1) {
+        monthlySpendingChart1.destroy(); //destroy existing chart
+      }
+      const summaryContainer = document.getElementById('monthly-summary-1');
+      summaryContainer.innerHTML = ''; // Clear previous content
+
+    return;}
+     const response = await fetch(`/api/expenses/${category}/${spender}`)
+     const spendingbycategory = await response.json()
+
+     console.log(spendingbycategory);
+
+     displayMonthlySummary(spendingbycategory,spender);
+     console.log(spendingbycategory);
+   }
+   catch(error){
+     console.error("Error fetching spending by category", error)
+   }
+ }
+
+
+
+
+
+function displayMonthlySummary(monthlySummary,spender) {
+
+  if (spender == 1) {
+    
+    const SpendingCategoryLabelSpender1 = document.getElementById('SpendingCategoryLabelSpender1');
+    SpendingCategoryLabelSpender1.innerHTML = spenderLabelData.spender1 + ' Spending by Category'
+
+    const summaryContainer = document.getElementById('monthly-summary-1');
+    summaryContainer.innerHTML = ''; // Clear previous content
+
+    // convert object to an array for iteration
+    const monthlySummariesArray = Object.entries(monthlySummary);
+    monthlySummariesArray.sort((a,b) => {
+          const dateA = new Date(a[0])
+          const dateB = new Date(b[0])
+
+          return dateA - dateB;
+    });
+/*
+    monthlySummariesArray.forEach(([month, total]) => {
+    summaryContainer.innerHTML += `
+        <table style="width:100%;padding:10px;border:1px solid #eee"><tr>
+            <td style="width:30%">
+                ${month}
+            </td>
+            
+            <td style="width:30%;text-align:right;">
+                ${formatCurrency(total)}
+            </td>
+        </tr></table>`;
+    });
+*/
+    if (monthlySpendingChart1) {
+      monthlySpendingChart1.destroy(); //destroy existing chart
+    }
+
+    updateMonthlySpendingChart(monthlySummariesArray,spender)
+  }
+
+  if (spender == 0) {
+    const SpendingCategoryLabelSpender0 = document.getElementById('SpendingCategoryLabelSpender0');
+    SpendingCategoryLabelSpender0.innerHTML = spenderLabelData.spender0 + ' Spending by Category'
+
+
+    const summaryContainer0 = document.getElementById('monthly-summary-0');
+    summaryContainer0.innerHTML = ''; // Clear previous content
+
+    // convert object to an array for iteration
+    const monthlySummariesArray0 = Object.entries(monthlySummary);
+    monthlySummariesArray0.sort((a,b) => {
+          const dateA = new Date(a[0])
+          const dateB = new Date(b[0])
+
+          return dateA - dateB;
+    });
+/*
+    monthlySummariesArray0.forEach(([month, total]) => {
+    summaryContainer0.innerHTML += `
+        <table style="width:100%;padding:10px;border:1px solid #eee"><tr>
+            <td style="width:30%">
+                ${month}
+            </td>
+            
+            <td style="width:30%;text-align:right;">
+                ${formatCurrency(total)}
+            </td>
+        </tr></table>`;
+    });
+*/
+    if (monthlySpendingChart0) {
+      monthlySpendingChart0.destroy(); //destroy existing chart
+    }
+
+    updateMonthlySpendingChart(monthlySummariesArray0,spender)
+  }  
+}
+
+function updateMonthlySpendingChart(monthlySpendingChartData,spender) {
+  //console.log(spendingChartData)
+  let labels = [];
+  let values = [];
+  monthlySpendingChartData.forEach(item => {
+      labels.push(item[0]);
+      values.push(item[1]*-1);
+
+  });
+
+    if (spender == 1) {
+      monthlySpendingChart1 = new Chart(monthlySpendingctx1, {
+        type: 'bar',
+        data: {labels: labels,
+          datasets: [{
+          label: spenderLabelData.spender1 + ' Spending by Month',
+          data: values,
+          backgroundColor: '#e9724d'
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+    }
+    if (spender == 0) {
+      monthlySpendingChart0 = new Chart(monthlySpendingctx0, {
+        type: 'bar',
+        data: {labels: labels,
+          datasets: [{
+          label: spenderLabelData.spender0 + ' Spending by Month',
+          data: values,
+          backgroundColor: '#0070c0'
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+    }    
+  
+  }
+
+
+
+
+
+
+ fetchCategories(1);
+
+
+
+
+
+ document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.getElementById('dateFilterDropdown');
+
+    // const myDictionary = {
+    //     option1: "Value 1",
+    //     option2: "Value 2",
+    //     option3: "Value 3",
+    //     option4: "Value 4"
+    // };
+
+    //generateDropdownHTML(dateFilterDict)
+
+    console.log(dateFilterDict);
+
+    // Function to add options from dictionary
+     function addOptionsToDropdown(selectElement, data){
+        for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+               const option = document.createElement('option');
+               option.value = data[key]; // Use the key as the value
+               option.textContent =  key; // Use dictionary value as displayed text
+               selectElement.appendChild(option);
+            }
+        }
+    }
+
+    addOptionsToDropdown(dropdown, dateFilterDict);
+
+    dropdown.addEventListener('change', function() {
+        const selectedValue = dropdown.value;
+        selectedFilter = selectedValue;
+        refreshDashboard(selectedFilter);
+        console.log("Selected Value:", selectedValue);
+    });
+});
+
+</script>
+
+<footer>
+  <p>© 2024 Schenks a lot</p>
+</footer>
+
+</body>
+</html>

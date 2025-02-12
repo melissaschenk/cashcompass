@@ -1,0 +1,149 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+header, footer{
+    background: #333;
+    color: white;
+    text-align: center;
+    padding: 1em 0;
+}
+
+main{
+    padding: 1em;
+    max-width: 1200px; /* Limit width on large screens */
+    margin: 0 auto; /* Centers content*/
+}
+
+.kpi-container {
+    display: flex;
+    justify-content: space-around; /* Distribute KPIs evenly */
+    flex-wrap: wrap; /* Wrap on smaller screens */
+    margin-bottom: 1.5em;
+}
+
+.kpi {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1em;
+    text-align: center;
+    flex: 1;
+    margin: 0.5em;
+     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+     min-width: 100px;
+}
+
+.chart-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); /* Responsive grid */
+    gap: 1.5em;
+}
+
+.chart {
+   background-color: #fff;
+    border-radius: 8px;
+    padding: 1em;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.detail-container {
+     background-color: #fff;
+    border-radius: 8px;
+    padding: 1em;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-top: 1.5em;
+}
+
+select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+    font-family: sans-serif; /* or any other preferred font */
+    background-color: white;
+    color: #333;    
+    width: auto; /* adjust as needed */
+    margin:0px 0 15px 0px;
+  }
+  
+/* Style the tab */
+.tab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+    }
+  
+    /* Style the buttons that are used to open the tab content */
+    .tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    }
+  
+    /* Change background color of buttons on hover */
+    .tab button:hover {
+    background-color: #ddd;
+    }
+  
+    /* Create an active/current tablink class */
+    .tab button.active {
+    background-color: #ccc;
+    }
+  
+    /* Style the tab content */
+    .tabcontent {
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-top: none;
+    }    
+    .tabcontent {
+    animation: fadeEffect 1s; /* Fading effect takes 1 second */
+    }
+    .top-right {
+        float: right;
+        position: absolute; /* absolutely position the element within its parent*/
+        top: 30px;
+        right: 15px;
+      }
+    
+    .spending-info {
+        /* top: 10px;
+        right: 10px; */
+        text-align: right; /* Align the text right */
+          font-size: 1em;
+          color: #555;
+      }
+      .spending-info > span {
+       display: block; /* make each span appear on its own line*/
+      
+      }    
+    .date-filter-container {
+        top:-50px;position:relative;padding:5px;text-align:right;
+        z-index: -1;
+    }
+  
+    /* Go from zero to full opacity */
+    @keyframes fadeEffect {
+    from {opacity: 0;}
+    to {opacity: 1;}
+    }
+  
+/* Responsive adjustments */
+@media (max-width: 768px) {
+     .kpi-container {
+       flex-direction: column;
+     }
+     .chart-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid */
+        gap: 1.5em;
+    }
+}
