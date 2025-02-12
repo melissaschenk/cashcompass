@@ -1,0 +1,21 @@
+{
+  "name": "node-csv-charts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "chart.js": "^4.4.7",
+    "chartjs-node-canvas": "^4.1.6",
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2"
+  }
+}

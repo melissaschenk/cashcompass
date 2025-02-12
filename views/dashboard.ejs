@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Dashboard</title>
+    <link rel="stylesheet" href="css/style1.css">
+    <script src="script.js" defer></script>
+     <!-- Include a charting library (e.g., Chart.js) -->
+     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>My Dashboard</h1>
+    </header>
+    <main>
+        <section class="kpi-container">
+            <div class="kpi">
+                <h3>KPI 1</h3>
+                <p>Value 123</p>
+            </div>
+             <div class="kpi">
+                <h3>KPI 2</h3>
+                <p>Value 456</p>
+            </div>
+              <div class="kpi">
+                <h3>KPI 3</h3>
+                <p>Value 789</p>
+            </div>
+              <div class="kpi">
+                <h3>KPI 4</h3>
+                <p>Value 101</p>
+            </div>
+             <div class="kpi">
+                <h3>KPI 5</h3>
+                <p>Value 102</p>
+            </div>
+        </section>
+        <section class="chart-container">
+            <div class="chart">
+                <h2>Chart 1</h2>
+                <canvas id="chart1"></canvas>
+            </div>
+             <div class="chart">
+                <h2>Chart 2</h2>
+                <canvas id="chart2"></canvas>
+            </div>
+              <div class="chart">
+                <h2>Chart 3</h2>
+                <canvas id="chart3"></canvas>
+            </div>
+        </section>
+          <section class="detail-container">
+             <h2>Details View</h2>
+            <div id="detailContent">
+               <p>Select a chart element to see details.</p>
+            </div>
+        </section>
+    </main>
+    <footer>
+      <p>© 2024 My Company</p>
+    </footer>
+</body>
+</html>
