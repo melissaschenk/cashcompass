@@ -69,7 +69,7 @@ app.use(express.static('public'));
 
 let data_files = {'checking': ['data_checking.csv']
   ,'savings':['data_savings.csv']
-  ,'spending':['data_spending1.csv','data_spending0.csv']
+  ,'spending':['m_spending.csv','wmonroechecking.csv']
   ,'cleanup_category':['cleanup_category.csv']
   ,'target':['data_target.json']
   ,'spender_labels':['data_spender_labels.json']
@@ -370,7 +370,8 @@ function processSpendingCategoryData(dict) {
   const spendingData = {};
   const paymentData = {};
   let category ="";
-  let typeValue = ""
+  let typeValue = "";
+  let itemDescription ="";
   //console.log(numRecords)
   let dateValue;
 
@@ -383,6 +384,12 @@ function processSpendingCategoryData(dict) {
       }
       if (key == 'Amount'){
         categoryValue = value
+
+        // if (value > 0) {
+        //   category = "Income"
+        // }
+       
+
       }
       if (key == 'TransactionDate'){
         dateValue = value
@@ -391,15 +398,23 @@ function processSpendingCategoryData(dict) {
         typeValue = value
       }
 
+
     });
 
+    if (typeValue == "" && categoryValue > 0) {
+      console.log(dict)
+    }
+
+    
     if (typeValue == "Income") {
 
     };
-    if (!spendingData[category] && typeValue != "Payment" && category != "Income") {
+
+   
+    if (!spendingData[category] && typeValue != "Payment" && category != "Income" && category != "Way2Save") {
       spendingData[category]  = { total: 0, items: [] };
     }
-    if (typeValue != "Payment" && category != "Income") {
+    if (typeValue != "Payment" && category != "Income" && category != "Way2Save") {
       spendingData[category].total += categoryValue*-1;
       spendingData[category].items.push(dict[i]);
     }
