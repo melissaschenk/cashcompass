@@ -5,11 +5,10 @@ const { createObjectCsvWriter } = require('csv-writer');
 const app = express();
 const port = 3000;
 const path = require('path');
-const sqlconfig = require('./config'); 
+const config = require('./config'); 
 const odbc = require('odbc');
 const { parse, format, isValid } = require('date-fns');
 const { start } = require('repl');
-const { config } = require('process');
 
 app.set('views', './views'); // Set the views directory if not in the root
 app.get('/dashboard', (req, res) => {
@@ -22,7 +21,7 @@ app.use(express.static('public'));
 const useWindowsAuth = true; // Set to true to use Windows Auth, false for SQL Login
 
 // --- Build Connection String ---
-let connectionString = `Driver={${sqlconfig.sqlconn.driverName}};Server=${sqlconfig.sqlconn.server};Database=${sqlconfig.sqlconn.database};`;
+let connectionString = `Driver={${config.sqlconn.driverName}};Server=${config.sqlconn.server};Database=${config.sqlconn.database};`;
 
 if (useWindowsAuth) {
   connectionString += 'Trusted_Connection=yes;'; // Standard ODBC parameter for Windows Auth
@@ -146,44 +145,11 @@ const spendingDict = {}
 
 
 
-//sample data melissa & william
-let data_files = {'checking': ['data_checking.csv']
-  ,'savings':['data_savings.csv']
-  ,'spending':['data_spending0.csv','data_spending1.csv']
-  ,'cleanup_category':['cleanup_category.csv']
-  ,'target':['data_target.json']
-  ,'spender_labels':['data_spender_labels.json']
+//sample data
+const data_files = config.data_files
 
-}
+const Users = config.Users
 
-
-//data melissa & william
-
-data_files = {'checking': ['data_checking.csv']
-  ,'savings':['data_savings.csv']
-  ,'cleanup_category':['cleanup_category.csv']
-  ,'target':['wmonroe_target.json']
-  ,'spender_labels':['wmonroe_labels.json']
-}
-
-//data melissa & adam
-
-data_files = {'checking': ['s_checking.csv']
-  ,'savings':['s_savings.csv']
-  ,'spending':['a_spending2024.csv','m_spending.csv']
-  ,'cleanup_category':['cleanup_category.csv']
-  ,'target':['s_target.json']
-  ,'spender_labels':['spender_labels.json']
-}
-
-
-
-
-//data adam & melissa
-let Users = [2,1]
-
-//data william & melissa
-//Users = [3,1]
 
 let AccountData = [];
 let Categories = [];
@@ -385,6 +351,14 @@ if (InstitutionName == 'JP Morgan Chase Bank') {
   formattedTransactionDate = formatDateMDYtoYMD_datefns(transaction.TransactionDate)
   formattedPostDate = formattedTransactionDate
   amount = transaction.Amount
+}
+
+if (InstitutionName == 'Credit Card Bank')
+{
+  formattedTransactionDate = transaction.TransactionDate
+  formattedPostDate = formattedTransactionDate
+  amount = transaction.Amount
+
 }
   console.log("\n--- ODBC Example 3: INSERT statement ---");
    // IMPORTANT: Always use parameters for INSERT/UPDATE/DELETE

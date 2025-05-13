@@ -31,8 +31,17 @@
 
 
     </section>
+    
+    
 
-    <select id="dateFilterDropdown"> </select> <div id="dateFilterContainer" class="date-filter-container"></div>
+    <select id="dateFilterDropdown"> </select> <div id="dateFilterContainer" class="date-filter-container">
+
+      
+    </div>
+
+    <button onclick="refreshDataFiles()">Refresh Data</button>
+
+    
 
     <section class="chart-container">
         <div class="chart">
@@ -159,6 +168,18 @@
 
   let selectedFilter = '';
 
+    
+  function refreshDataFiles() {
+    fetch(`/api/refreshDataFiles`)
+      .then(response => response.json())
+      .then(data => {
+
+        console.log(data);
+        refreshDashboard(filter)
+      });
+  }
+
+
   function refreshDashboard(filter) {
     fetchSpending(filter,1);
     fetchSpending(filter,0);
@@ -258,7 +279,7 @@
                   ${transaction.Description} ${transaction.Memo}
               </td>
               <td style="width:20%">
-                  ${transaction.Type}
+                  ${transaction.TransactionType}
               </td>
               <td style="width:10%;text-align:right;">
                   ${formatCurrency(transaction.Amount)}
