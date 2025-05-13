@@ -73,8 +73,6 @@ async function executeOdbcQueryWithParams(sqlQuery, params = []) {
 
 
 
-
-
 async function importData() {
     console.log("\n--- ODBC Example 1: Select Orders by Customer ID and Status ---");
     // Use '?' for placeholders
