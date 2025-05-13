@@ -7,7 +7,8 @@ Welcome to **Cash Compass**—the financial dashboard that puts your entire fina
 ### 📊 **KPIs Section**  
 - Displays **KPIs for two distinct spenders** and their **combined overall spending**.  
 - Shows **over and under budget information** based on spending targets.  
-- Provides **checking and savings running total balance**.  
+- Provides **checking running total balance**.
+- Provides **savings total for time period**.
 - Highlights **target minimum checking balance** and **target savings balance**.  
 
 ### 📈 **Checking and Savings Line Charts**  
