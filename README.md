@@ -32,6 +32,12 @@ Welcome to **Cash Compass**—the financial dashboard that puts your entire fina
   - **Total spending** for the year.  
   - **Average monthly spending** for both **Spender A and Spender B**.  
 
+
+
+## Cash Compass Demo
+https://github.com/user-attachments/assets/2492da73-2b07-4fa0-a145-c8b856e627bf
+
+
 ## 🚀 Getting Started  
 
 Instructions on setting up and using Cash Compass will be added soon! Stay tuned.  
