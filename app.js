@@ -5,89 +5,24 @@ const { createObjectCsvWriter } = require('csv-writer');
 const app = express();
 const port = 3000;
 const path = require('path');
-const auth = require('./auth'); 
+const sqlconfig = require('./config'); 
 const odbc = require('odbc');
 const { parse, format, isValid } = require('date-fns');
 const { start } = require('repl');
+const { config } = require('process');
 
 app.set('views', './views'); // Set the views directory if not in the root
 app.get('/dashboard', (req, res) => {
   res.render('dashboard'); // Render the 'about.ejs' view
 });
-app.post('/register', async (req, res) => {
-  console.log(req)
-  console.log(res)
-  //const { username, password } = req.body;
-  // if (!username || !password)
-  //     {
-  //         res.status(400).send('Missing username or password');
-  //          return;
-  //     }
- try {
-      //await auth.registerUser(username, password)
-       res.redirect('/');
-  } catch(err){
-        res.status(500).send('Error registering user')
-  }
-
-});
-
-app.post('/login', async (req, res) => {
-  // const { username, password } = req.body;
-  //    if (!username || !password)
-  //     {
-  //         res.status(400).send('Missing username or password');
-  //          return;
-  //     }
-
-  if (await auth.authenticateUser(username, password)) {
-      res.send('Login successful!');
-  } else {
-      res.status(401).send('Login failed. Invalid username or password.');
-     // res.sendFile(path.join(__dirname, 'views', 'login.html'), {error: 'invalid credentials'})
-     // res.redirect('/?error=invalid');
-  }
-});
-
 
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
-
-
-// app.get('/login', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'views', 'login.html'));
-// });
-
-// app.get('/register', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'views', 'register.html'));
-// });
-
-
-
-
-
-// --- Configuration ---
-const config = {
-  server: 'SCHENKSALOT', // e.g., 'localhost\\SQLEXPRESS', 'MAIN_SQL_SVR'
-  database: 'CashCompass',          // e.g., 'AdventureWorksDW'
-  driverName: 'ODBC Driver 17 for SQL Server' // <-- CRITICAL: Must match installed driver name EXACTLY
-};
-
-// --- Choose Authentication Method ---
-
-// Option 1: Windows Authentication (Integrated Security)
 const useWindowsAuth = true; // Set to true to use Windows Auth, false for SQL Login
 
-// Option 2: SQL Server Login (if useWindowsAuth is false)
-const sqlLogin = {
-  uid: 'YourSqlUsername', // Replace with your SQL login username
-  pwd: 'YourSqlPassword'  // Replace with your SQL login password
-};
-
 // --- Build Connection String ---
-// DSN-less connection recommended for applications
-let connectionString = `Driver={${config.driverName}};Server=${config.server};Database=${config.database};`;
+let connectionString = `Driver={${sqlconfig.sqlconn.driverName}};Server=${sqlconfig.sqlconn.server};Database=${sqlconfig.sqlconn.database};`;
 
 if (useWindowsAuth) {
   connectionString += 'Trusted_Connection=yes;'; // Standard ODBC parameter for Windows Auth
@@ -96,11 +31,6 @@ if (useWindowsAuth) {
   connectionString += `Uid=${sqlLogin.uid};Pwd=${sqlLogin.pwd};`;
   console.log(`Using SQL Server Authentication for user: ${sqlLogin.uid}`);
 }
-
-// Optional: Add encryption parameters if needed (recommended)
-// connectionString += 'Encrypt=yes;'; // Enable encryption
-// connectionString += 'TrustServerCertificate=yes;'; // Only if using self-signed certs (dev/test)
-
 
 async function executeOdbcQueryWithParams(sqlQuery, params = []) {
   console.log(`Executing ODBC query: ${sqlQuery.substring(0, 150)}...`);
