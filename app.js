@@ -132,22 +132,10 @@ let checkingData = [];
 let savingsData = [];
 let spendingData = {};
 let spendingData0 = {};
-const spendersData = []
-const spendingDict = {}
-
-//SPENDING
-// const spending_ds1 = fs.readFileSync('data/'+data_files.spending, {encoding:'utf8'});
-// const spending_transactions = csvToDict(spending_ds1);
-
-
-
-
 
 //sample data
 const data_files = config.data_files
-
 const Users = config.Users
-
 
 let AccountData = [];
 let Categories = [];
@@ -173,8 +161,6 @@ async function loadCashCompass() {
 }
 
 loadCashCompass();
-
-
 
 async function getCategories() {
   console.log("\n--- SELECT * FROM Transactions where AccountId = AccountId ---");
@@ -385,8 +371,6 @@ if (InstitutionName == 'Credit Card Bank')
     ,dpuid
   ];
   
-  //transaction.Memo
-
   // Execute the insert. The return value might be just metadata or an empty array.
   const mergeResult = await executeOdbcQueryWithParams(mergeTransactionQuery, mergeTransactionParams);
 
@@ -430,24 +414,12 @@ function readAccountFileTransactions(account)
           // an object for each row (excluding the header row).
           // Example: Access the first row's 'Name' property (assuming a 'Name' header)
           if (results.length > 0) {
-            //TransactionDate,PostDate,Description,Category,Type,Amount,Memo
             // console.log('First Row [TransactionDate]:', results[0].TransactionDate); 
-            // console.log('First Row [PostDate]:', results[0].PostDate); 
             // console.log('First Row [Description]:', results[0].Description); 
             // console.log('First Row [Category]:', results[0].Category); 
-            // console.log('First Row [Type]:', results[0].Type); 
-            // console.log('First Row [Amount]:', results[0].Amount); 
-            // console.log('First Row [Memo]:', results[0].Memo); 
-
-            
 
             for (let i = 0; i < Object.keys(results).length; i++) {
               executeInsertTransaction(results[i],account)
-
-              // Object.entries(results[i]).forEach(([key, value]) => {
-              //   // console.log("key: " + key)
-              //   // console.log("value: " + value);
-              // });
             }
           }
       })
@@ -457,21 +429,7 @@ function readAccountFileTransactions(account)
       });
 
   console.log(`Attempting to read CSV file from: ${filePath}`);
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 function processDates(inputDictionary) {
  
@@ -482,7 +440,6 @@ function processDates(inputDictionary) {
     if (inputDictionary.hasOwnProperty(key)) {
 
       try {
-
 
       const dateStr = inputDictionary[key].TransactionDate;
 
@@ -511,10 +468,6 @@ function processDates(inputDictionary) {
       }
     }
   }
-
-  // Sort the processedDates in descending order
-  //processedDates.sort((a, b) => b.localeCompare(a));
-
 
    // create dictionary to return, with Month Year as key and value from sorted list
    const result = {};
@@ -608,153 +561,7 @@ function formatDateMDYtoYMD_datefns(dateStringMDY) {
   }
 }
 
-
-// const inputFile = 'data/'+data_files.spending[1];
-// const outputFile = 'output.csv';
-
-// const inputCsvPath = 'data/'+data_files.spending[1]; // Path to input CSV
-// const outputCsvPath = 'output.csv'; // Path to output CSV
-
-// const spender1_csvfile = fs.readFileSync(inputCsvPath, {encoding:'utf8'});
-
-// const results = [];
-// console.log(spender1_csvfile)
-
-
-
-// function modifyCsvHeadersSync() {
-//   try {
-//       const fileContent = fs.readFileSync(inputCsvPath, 'utf-8');
-//       const results = [];
-//       const rows = fileContent.trim().split('\n');
-//       if (rows.length <= 0){
-//         console.log("Input file is empty, exiting...")
-//         return;
-//       }
-//       const headers = rows[0].split(',').map(header => header.trim());
-
-//       for (let i = 1; i < rows.length; i++){
-//           const data = rows[i].split(',').map(data => data.trim())
-//           const row = {};
-//           for (let j=0; j < headers.length; j++) {
-//               row[headers[j]] = data[j];
-//           }
-
-//           results.push(row);
-//       }
-
-//       const modifiedHeaders = headers.map(header =>
-//           header.replace(/\s+/g, '')
-//       );
-//       const csvWriter = createObjectCsvWriter({
-//           path: outputCsvPath,
-//           header: modifiedHeaders.map(header => ({id: header, title: header})),
-//       });
-
-//       csvWriter.writeRecords(results).then(() => {
-//           console.log(`Successfully modified column headers and wrote to ${outputCsvPath}`);
-//       });
-//   } catch (error) {
-//       console.error('Error:', error);
-//   }
-// }
-
-// modifyCsvHeadersSync(outputCsvPath);
-
-// console.log()
-
-
-
-
-
-
-
-// async function modifyCsvHeaders(spender_csvfile) {
-//   try {
-//     const results = [];
-//     console.log(spender_csvfile)
-
-//     // Read CSV file
-//     const csvStream = fs.createReadStream(inputCsvPath)
-//           .pipe(csv())
-//           .on('data', (row) => results.push(row));
-
-//     await new Promise((resolve, reject) => {
-//       csvStream.on('end', resolve)
-//           .on('error', reject);
-//     })
-//     if(results.length === 0){
-//       console.log("Input file is empty, exiting...")
-//       return;
-//     }
-//     const originalHeaders = Object.keys(results[0]);
-
-//     // Modify headers (remove spaces)
-//     const modifiedHeaders = originalHeaders.map(header =>
-//         header.replace(/\s+/g, '')
-//     );
-
-
-//     // Create CSV writer
-//     const csvWriter = createObjectCsvWriter({
-//       path: outputCsvPath,
-//       header: modifiedHeaders.map(header => ({id: header, title: header})),
-//     });
-
-//     // Write to new CSV file
-//     await csvWriter.writeRecords(results);
-
-//     console.log(`Successfully modified column headers and wrote to ${outputCsvPath}`);
-//   } catch (error) {
-//     console.error('Error:', error);
-//   }
-// }
-
-
-// modifyCsvHeaders();
-
-
-// const results = [];
-
-// fs.createReadStream(inputFile)
-//   .pipe(csv({
-//     skipEmptyLines: true // Skip empty lines
-//   }))
-//   .on('data', (data) => {
-//     // Perform cleanup on columns here (e.g., trim whitespace)
-//     for (const key in data) {
-//       data[key] = data[key].trim();
-//     }
-
-//     results.push(data);
-//   })
-//   .on('end', () => {
-//     const csvWriter = createCsvWriter({
-//       path: outputFile,
-//       header: Object.keys(results[0]).map(key => ({ id: key, title: key }))
-//     });
-
-//     csvWriter
-//       .writeRecords(results)
-//       .then(() => console.log('CSV file successfully cleaned and written.'));
-//   });
-
-
-
-
-
-
-
-
-
-
-
 const spenderLabelData = require('./data/'+ data_files.spender_labels);
-
-// const spender0Label= spenderLabelData.spender0
-// const spender1Label= spenderLabelData.spender1
-
-
 const targetData = require('./data/'+ data_files.target);
 
 const cleanup_category = fs.readFileSync('data/'+data_files.cleanup_category, {encoding:'utf8'});
@@ -822,12 +629,6 @@ function processSpendingCategoryData(dict) {
       }
       if (key == 'Amount'){
         categoryValue = value
-
-        // if (value > 0) {
-        //   category = "Income"
-        // }
-       
-
       }
       if (key == 'TransactionDate'){
         dateValue = value
@@ -835,20 +636,14 @@ function processSpendingCategoryData(dict) {
       if (key == 'Type'){
         typeValue = value
       }
-
-
     });
 
     if (typeValue == "" && categoryValue > 0) {
-      //console.log(dict)
     }
-
     
     if (typeValue == "Income") {
-
     };
 
-   
     if (!spendingData[category] && typeValue != "Payment" && category != "Income" && category != "Way2Save"  && category != "Credit Card Payment" ) {
       spendingData[category]  = { total: 0, items: [] };
     }
@@ -880,8 +675,6 @@ function getStartAndEndDates(filter) {
       endDate = new Date(year,month_number, 0);
       filter = "SpecificMonthYear"
     }
-
-
 
   if (filter) {
     if (filter.includes('M_') && filter) {
@@ -949,55 +742,6 @@ function getStartAndEndDates(filter) {
 }
 
 
-
-// let checkingData = [];
-// let savingsData = [];
-// let spendingData = {};
-// let spendingData0 = {};
-// const spendersData = []
-// const spendingDict = {}
-
-//SPENDING
-// const spending_ds1 = fs.readFileSync('data/'+data_files.spending, {encoding:'utf8'});
-// const spending_transactions = csvToDict(spending_ds1);
-
-// data_files.spending.forEach(spender => {
-
-//   let spending_ds1 = fs.readFileSync('data/'+spender, {encoding:'utf8'});
-//   let spending_transactions = csvToDict(spending_ds1);
-
-//   spending_transactions.forEach(transaction => {
-//     dict_cleanup_category.forEach(category => {
-//       if(transaction.Description.includes(category.Description)) {
-//         transaction.Category = category.Category;
-//       }
-//       // console.log(transaction);
-//       // console.log(category);
-
-//     });
-    
-//   });
-
-
-
-//     for (const row of spending_transactions) {
-//       const key = Object.values(row)[0]; // first column
-//       spendingDict[key] = row;
-//     }
-  
-//   spendersData.push({ spending_transactions: spending_transactions });
-// });
-
-
-// const getUniqueCategories = (spender) => {
-//   //spendin
-//   const categories = AccountData[spender].Transactions.map(expense => expense.Category);
-//   const array_categories = [...new Set(categories)];
-//   const sorted_categories = array_categories.sort();
-//   return sorted_categories;
-// }
-
-
 //CHECKING DATA
 
 const dict_cschecking_transactions = csvToDict(fs.readFileSync('data/'+data_files.checking, {encoding:'utf8'}));
@@ -1034,10 +778,6 @@ function formatCurrency(value){
 }
 
 
-
-
-
-
 //SPENDING BY CATEGORY
 function groupTransactionsByMonth(transactions) {
   const monthlyTotals = {}; // The dictionary to store totals by month
@@ -1055,12 +795,6 @@ function groupTransactionsByMonth(transactions) {
   return monthlyTotals;
 }
 
-
-
-
-
-
-//console.log(dateFilterDict);
 
 function calculateAverageSpending(category,filter,spender) {
   const dates = getStartAndEndDates(filter);
@@ -1082,7 +816,6 @@ function calculateAverageSpending(category,filter,spender) {
 
   return {averageSpending: averageSpending.toFixed(2),totalSpending:totalSpending, category: category, message: "Success"};
 }
-
 
 app.get('/', (req, res) => {
   // Wait for data to be processed before rendering the page.  This is a simplified approach.  For production, consider promises or async/await.
@@ -1109,9 +842,6 @@ app.get('/api/refreshDataFiles', (req, res) => {
   // const spender = req.params.spender;
   // res.json(getUniqueCategories(spender));
 });
-
-
-
 
 // API: Get average spending by category
 app.get('/api/average-spending/:category/:spender', (req, res) => {
@@ -1278,7 +1008,7 @@ app.get('/api/kpis', async (req, res) => {
       { name: spenderLabelData.spender0 + ' Spending', value: formatCurrency(totalSpendingA), target: formatCurrency(spendingTargetA), targetLabel:'Target', deltaLabel: spendingDeltaLabelA, delta: formatCurrency(spendingDeltaA), deltaLabelColor:spendingColorA},
       { name: 'All Spending', value: formatCurrency(totalSpendingA+totalSpendingM), target: formatCurrency(totalSpendingAllTarget), targetLabel:'Target', deltaLabel: totalSpendingAllDeltaLabel, delta: formatCurrency(totalSpendingAllDelta), deltaLabelColor:totalSpendingAllColor},
       { name: 'Checking Balance', value: formatCurrency(currentCheckingBalance), target: formatCurrency(3000), targetLabel:'Target Min Balance', deltaLabel: checkingDeltaLabel,delta: formatCurrency(checkingDelta),deltaLabelColor:checkingColor },
-      { name: 'Savings Balance', value: formatCurrency(totalSavings), target: formatCurrency(savingsTarget), targetLabel:'Target', deltaLabel: savingsDeltaLabel,delta:formatCurrency(savingsDelta),deltaLabelColor: savingsColor},
+      { name: 'Savings', value: formatCurrency(totalSavings), target: formatCurrency(savingsTarget), targetLabel:'Target', deltaLabel: savingsDeltaLabel,delta:formatCurrency(savingsDelta),deltaLabelColor: savingsColor},
     ];
 
 
@@ -1328,11 +1058,7 @@ app.get('/api/spending', async (req, res) => {
     console.error('Error fetching spending:', error);
     res.status(500).json({ error: 'Failed to fetch spending' });
   }
-
-
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
