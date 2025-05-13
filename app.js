@@ -6,27 +6,14 @@ const app = express();
 const port = 3000;
 const path = require('path');
 const auth = require('./auth'); 
+const odbc = require('odbc');
+const { parse, format, isValid } = require('date-fns');
 const { start } = require('repl');
 
-
 app.set('views', './views'); // Set the views directory if not in the root
-
-
-// app.get('/login', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'views', 'login.html'));
-// });
-
-// app.get('/register', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'views', 'register.html'));
-// });
-
 app.get('/dashboard', (req, res) => {
-    res.render('dashboard'); // Render the 'about.ejs' view
+  res.render('dashboard'); // Render the 'about.ejs' view
 });
-
-
-
-
 app.post('/register', async (req, res) => {
   console.log(req)
   console.log(res)
@@ -67,38 +54,540 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 
+
+// app.get('/login', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'views', 'login.html'));
+// });
+
+// app.get('/register', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'views', 'register.html'));
+// });
+
+
+
+
+
+// --- Configuration ---
+const config = {
+  server: 'SCHENKSALOT', // e.g., 'localhost\\SQLEXPRESS', 'MAIN_SQL_SVR'
+  database: 'CashCompass',          // e.g., 'AdventureWorksDW'
+  driverName: 'ODBC Driver 17 for SQL Server' // <-- CRITICAL: Must match installed driver name EXACTLY
+};
+
+// --- Choose Authentication Method ---
+
+// Option 1: Windows Authentication (Integrated Security)
+const useWindowsAuth = true; // Set to true to use Windows Auth, false for SQL Login
+
+// Option 2: SQL Server Login (if useWindowsAuth is false)
+const sqlLogin = {
+  uid: 'YourSqlUsername', // Replace with your SQL login username
+  pwd: 'YourSqlPassword'  // Replace with your SQL login password
+};
+
+// --- Build Connection String ---
+// DSN-less connection recommended for applications
+let connectionString = `Driver={${config.driverName}};Server=${config.server};Database=${config.database};`;
+
+if (useWindowsAuth) {
+  connectionString += 'Trusted_Connection=yes;'; // Standard ODBC parameter for Windows Auth
+  console.log("Using Windows Authentication.");
+} else {
+  connectionString += `Uid=${sqlLogin.uid};Pwd=${sqlLogin.pwd};`;
+  console.log(`Using SQL Server Authentication for user: ${sqlLogin.uid}`);
+}
+
+// Optional: Add encryption parameters if needed (recommended)
+// connectionString += 'Encrypt=yes;'; // Enable encryption
+// connectionString += 'TrustServerCertificate=yes;'; // Only if using self-signed certs (dev/test)
+
+
+async function executeOdbcQueryWithParams(sqlQuery, params = []) {
+  console.log(`Executing ODBC query: ${sqlQuery.substring(0, 150)}...`);
+  if (params.length > 0) {
+      console.log('With parameters:', params);
+  }
+
+  let connection; // Scope connection for finally block
+
+  try {
+      // Connect to the database
+      connection = await odbc.connect(connectionString);
+      console.log("ODBC connection successful.");
+
+      // Execute the query with parameters
+      // The 'odbc' library expects parameters as an array for '?' placeholders
+      const result = await connection.query(sqlQuery, params);
+      console.log(`ODBC query executed successfully. Rows returned: ${result.length}`);
+
+      // The 'odbc' library's query result usually includes metadata.
+      // The actual row data is often directly in the array.
+      // You might inspect `result.columns` or `result.count` if needed.
+      return result; // Return the array of row objects (or potentially with metadata)
+
+  } catch (error) {
+      console.error('ODBC Error:', error);
+      return null; // Indicate failure
+
+  } finally {
+      // Ensure the connection is closed
+      if (connection) {
+          try {
+              await connection.close();
+              console.log("ODBC connection closed.");
+          } catch (closeError) {
+              console.error('Error closing ODBC connection:', closeError);
+          }
+      }
+  }
+}
+
+
+
+
+
+async function importData() {
+    console.log("\n--- ODBC Example 1: Select Orders by Customer ID and Status ---");
+    // Use '?' for placeholders
+    const accountQuery = `
+        
+        SELECT AF.FilePath, U.UserId, A.AccountId,A.AccountType,InstitutionName
+        FROM dbo.AccountFiles AF
+        INNER JOIN dbo.accounts A
+        ON AF.AccountId = A.AccountId
+        INNER JOIN UserAccounts UA
+        ON UA.AccountId = A.AccountId
+        INNER JOIN Users U
+        ON U.UserId = UA.UserId
+        WHERE A.IsActive = 1
+
+    `;
+    // Parameters must be in an array, matching the order of '?'
+    const accountParams = [
+        //1   // IsActive
+    ];
+    const account = await executeOdbcQueryWithParams(accountQuery, accountParams);
+
+    if (account) {
+        if (account.length > 0) {
+            console.log("Accounts Found:");
+            //console.table(account); // Display results        
+            
+            for (let i = 0; i < account.length; i++) {
+              console.log(i);
+              readAccountFileTransactions(account[i])
+            }
+        } else {
+            console.log("No account found matching the criteria.");
+        }
+         // Example: Accessing a specific field from the first row
+         // if(orders.length > 0) { console.log("First Order ID:", orders[0].OrderID); }
+    } else {
+        console.log("Account query failed.");
+    }
+    
+}
+
+
+
+let dateFilterDict = {
+  "Last 30 days": "last30Days"
+  ,"Last 3 Months": "last3Months"
+  ,"Last 6 Months": "last6Months"
+  ,"YTD": "ytd"
+  ,"Last Year": "lastYear"
+  ,"Last 2 Years": "last2Years"
+};
+
+let monthYearFilterDict;
+
+let checkingData = [];
+let savingsData = [];
+let spendingData = {};
+let spendingData0 = {};
+const spendersData = []
+const spendingDict = {}
+
+//SPENDING
+// const spending_ds1 = fs.readFileSync('data/'+data_files.spending, {encoding:'utf8'});
+// const spending_transactions = csvToDict(spending_ds1);
+
+
+
+
+
+//sample data melissa & william
 let data_files = {'checking': ['data_checking.csv']
   ,'savings':['data_savings.csv']
-  ,'spending':['m_spending.csv','wmonroechecking.csv']
+  ,'spending':['data_spending0.csv','data_spending1.csv']
   ,'cleanup_category':['cleanup_category.csv']
   ,'target':['data_target.json']
   ,'spender_labels':['data_spender_labels.json']
 
+}
+
+
+//data melissa & william
+
+data_files = {'checking': ['data_checking.csv']
+  ,'savings':['data_savings.csv']
+  ,'cleanup_category':['cleanup_category.csv']
+  ,'target':['wmonroe_target.json']
+  ,'spender_labels':['wmonroe_labels.json']
+}
+
+//data melissa & adam
+
+data_files = {'checking': ['s_checking.csv']
+  ,'savings':['s_savings.csv']
+  ,'spending':['a_spending2024.csv','m_spending.csv']
+  ,'cleanup_category':['cleanup_category.csv']
+  ,'target':['s_target.json']
+  ,'spender_labels':['spender_labels.json']
+}
+
+
+
+
+//data adam & melissa
+let Users = [2,1]
+
+//data william & melissa
+//Users = [3,1]
+
+let AccountData = [];
+let Categories = [];
+
+async function loadCashCompass() {
+  await getAccountTransactions(Users[0])
+  await getAccountTransactions(Users[1])
+  await getCategories()
+  
+
+  // spendingData = AccountData
+  console.log(AccountData); 
+  console.log(Categories); 
+
+  if (AccountData.length > 0) {
+    monthYearFilterDict = processDates(AccountData[1].Transactions);
+    Object.entries(monthYearFilterDict).forEach(([key, value]) => {
+      dateFilterDict[key] = value;
+    
+    });
+  }
 
 }
 
-// data_files = {'checking': ['s_checking.csv']
-//   ,'savings':['s_savings.csv']
-//   ,'spending':['a_spending.csv','m_spending.csv']
-//   ,'cleanup_category':['cleanup_category.csv']
-//   ,'target':['s_target.json']
-//   ,'spender_labels':['spender_labels.json']
-// }
+loadCashCompass();
+
+
+
+async function getCategories() {
+  console.log("\n--- SELECT * FROM Transactions where AccountId = AccountId ---");
+  // Use '?' for placeholders
+  const query = `
+  
+  SELECT DISTINCT Category 
+  FROM Transactions t
+  INNER JOIN UserAccounts ua
+  on ua.AccountId = t.AccountId
+  INNER JOIN Users u
+  ON u.UserId = ua.UserId
+  AND U.UserId in (?,?)
+  WHERE transactiontype not in ('income','transfer','payment') 
+  order by Category
+  `;
+  // Parameters must be in an array, matching the order of '?'
+  const params = [
+    Users[0] //userid 1
+    ,Users[1] //userid 2
+  ];
+  const categories = await executeOdbcQueryWithParams(query, params);
+
+  if (categories) {
+      if (categories.length > 0) {
+        
+          console.log("Categories Found:");
+          //console.table(accountTransactions); // Display results        
+          
+          for (let i = 0; i < categories.length; i++) {
+            console.log(categories[i].Category);
+            Categories.push(categories[i].Category);
+          }
+      } else {
+          console.log("No categories found matching the criteria.");
+      }
+       // Example: Accessing a specific field from the first row
+       // if(orders.length > 0) { console.log("First Order ID:", orders[0].OrderID); }
+  } else {
+      console.log("categories query failed.");
+  }
+  
+}
+
+async function getAccountTransactions(AccountId) {
+  console.log("\n--- SELECT * FROM Transactions where AccountId = AccountId ---");
+  // Use '?' for placeholders
+  const accountTransactionsQuery = `SELECT 
+        t.AccountId
+        ,t.Category
+        ,t.TransactionType
+        ,t.TransactionDate
+        ,t.Amount
+        ,t.Description
+        ,t.DPUID
+        ,a.AccountType
+        ,Memo = ISNULL(t.Memo,'')
+      FROM dbo.Transactions t
+      INNER JOIN dbo.Accounts a
+      ON t.AccountId = a.AccountId
+	  INNER JOIN UserAccounts UA
+	  ON UA.AccountId = t.AccountId	
+	  INNER JOIN Users u
+	  on u.UserId = UA.UserId
+      WHERE u.UserId = ?
+      AND t.TransactionType NOT IN ('Payment','Income','Transfer')
+      `;
+  // Parameters must be in an array, matching the order of '?'
+  const accountTransactionsParams = [
+    AccountId   // AccountId
+  ];
+  const accountTransactions = await executeOdbcQueryWithParams(accountTransactionsQuery, accountTransactionsParams);
+
+  if (accountTransactions) {
+      if (accountTransactions.length > 0) {
+        let myAccountDict = {}
+        myAccountDict["AccountId"] = AccountId; // Sets the value for the key "key"
+        myAccountDict["Transactions"] = accountTransactions; // Sets the value for the key "key"
+
+          console.log("Accounts Found:");
+          //console.table(accountTransactions); // Display results        
+          
+          AccountData.push(myAccountDict)
+          // for (let i = 0; i < accountTransactions.length; i++) {
+          //   console.log(i);
+          // }
+      } else {
+          console.log("No account transactions found matching the criteria.");
+      }
+       // Example: Accessing a specific field from the first row
+       // if(orders.length > 0) { console.log("First Order ID:", orders[0].OrderID); }
+  } else {
+      console.log("account transactions query failed.");
+  }
+  
+}
+
+
+
+
+async function executeInsertTransaction(transaction,account) {
+const accountType = account.accountType
+const InstitutionName = account.InstitutionName
+let  mergeTransactionQuery = 
+      `MERGE dbo.Transactions T
+      USING (SELECT 
+
+        AccountId				    =?
+        ,Category				    =?
+        ,TransactionDate		=?
+        ,Amount					    =?
+        ,Description			  =?
+        ,TransactionType		=?
+        ,IsCleared				  =?
+        ,ClearedDate			  =?
+        ,DPUID					    =?
+      ) S 
+      ON S.DPUID = T.DPUID
+      WHEN NOT MATCHED THEN 
+      INSERT (	AccountId		
+                ,Category		
+                ,TransactionDate	
+                ,Amount			
+                ,Description		
+                ,TransactionType	
+                ,IsCleared		
+                ,ClearedDate		
+                ,DPUID			
+            )				
+          VALUES
+                (S.AccountId		
+                ,S.Category		
+                ,S.TransactionDate	
+                ,S.Amount			
+                ,S.Description		
+            ,S.TransactionType	
+            ,S.IsCleared		
+            ,S.ClearedDate		
+            ,S.DPUID);`
+
+let formattedTransactionDate = ''
+let formattedPostDate = ''
+let values = []
+let category = transaction.Category
+let amount = 0.00
+let description = transaction.Description
+let transactionType = transaction.Type
+
+if (InstitutionName == 'Wells Fargo') {
+  formattedTransactionDate = formatDateMDYtoYMD_datefns(transaction.TransactionDate)
+  formattedPostDate = formattedTransactionDate
+  category = ''
+  transactionType = ''
+  amount = transaction.Amount
+  //TransactionDate,Amount,,,Description
+}
+if (InstitutionName == 'Charles Schwab') {
+  formattedTransactionDate = formatDateMDYtoYMD_datefns(transaction.Date)
+  formattedPostDate = formattedTransactionDate
+  category = ''
+  transactionType = transaction.Type
+  if (transaction.Deposit) {
+    amount = amount = parseFloat( transaction.Deposit.replace('$', '').replace(',',''))
+  }
+  if (transaction.Withdrawal) {
+    amount = parseFloat( transaction.Withdrawal.replace('$', '').replace(',',''))*-1
+  }
+
+  //"Date","Status","Type","CheckNumber","Description","Withdrawal","Deposit","RunningBalance"
+}
+if (InstitutionName == 'JP Morgan Chase Bank') {
+  formattedTransactionDate = formatDateMDYtoYMD_datefns(transaction.TransactionDate)
+  formattedPostDate = formattedTransactionDate
+  amount = transaction.Amount
+}
+  console.log("\n--- ODBC Example 3: INSERT statement ---");
+   // IMPORTANT: Always use parameters for INSERT/UPDATE/DELETE
+  // Note: Replace YourLogTable, LogLevel, Message with actual names
+ 
+  values = [account.AccountId
+    ,category
+    ,formattedTransactionDate
+    ,amount
+    ,description
+    ,transactionType
+    ,1
+    ,formattedPostDate
+  ];
+
+  let dpuid = values.join("|"); // '1|Groceries|2025-03-31|-4.84|VONS #2116|Sale|1|2025-04-02'
+
+  const mergeTransactionParams =  [account.AccountId
+    ,category
+    ,formattedTransactionDate
+    ,amount
+    ,description
+    ,transactionType
+    ,1
+    ,formattedPostDate
+    ,dpuid
+  ];
+  
+  //transaction.Memo
+
+  // Execute the insert. The return value might be just metadata or an empty array.
+  const mergeResult = await executeOdbcQueryWithParams(mergeTransactionQuery, mergeTransactionParams);
+
+   if (mergeResult !== null) { // Check if the operation didn't fail outright
+      console.log("INSERT operation submitted successfully via ODBC.");
+      // The 'odbc' library might not return affected row count directly in the main result.
+      // You might need to check result properties or run a subsequent SELECT COUNT(*) if needed.
+      // console.log("Insert Result details:", mergeResult);
+  } else {
+      console.log("INSERT Query failed via ODBC.");
+  }
+}
+
+
+function readAccountFileTransactions(account)
+{
+  
+  const filePath = account.FilePath //'data/Chase5577_Activity20250101_20250406_20250406.CSV'; // --- Replace with the actual path to your CSV file ---
+  const results = [];
+
+  // Check if the file exists before trying to read it
+  if (!fs.existsSync(filePath)) {
+      console.error(`Error: File not found at path: ${filePath}`);
+      process.exit(1); // Exit the script with an error code
+  }
+
+  fs.createReadStream(filePath)
+      .pipe(csv()) // Pipe the read stream into the csv-parser
+      .on('data', (data) => {
+          // This event is triggered for each row parsed from the CSV
+          // 'data' will be an object with keys corresponding to the CSV headers
+          results.push(data);
+      })
+      .on('end', () => {
+          // This event is triggered when the entire file has been read and parsed
+          console.log('CSV file successfully processed.');
+          console.log('---------------------------------');
+          console.log('Parsed Data:', results);
+          console.log('---------------------------------');
+          // You can now work with the 'results' array, which contains
+          // an object for each row (excluding the header row).
+          // Example: Access the first row's 'Name' property (assuming a 'Name' header)
+          if (results.length > 0) {
+            //TransactionDate,PostDate,Description,Category,Type,Amount,Memo
+            // console.log('First Row [TransactionDate]:', results[0].TransactionDate); 
+            // console.log('First Row [PostDate]:', results[0].PostDate); 
+            // console.log('First Row [Description]:', results[0].Description); 
+            // console.log('First Row [Category]:', results[0].Category); 
+            // console.log('First Row [Type]:', results[0].Type); 
+            // console.log('First Row [Amount]:', results[0].Amount); 
+            // console.log('First Row [Memo]:', results[0].Memo); 
+
+            
+
+            for (let i = 0; i < Object.keys(results).length; i++) {
+              executeInsertTransaction(results[i],account)
+
+              // Object.entries(results[i]).forEach(([key, value]) => {
+              //   // console.log("key: " + key)
+              //   // console.log("value: " + value);
+              // });
+            }
+          }
+      })
+      .on('error', (error) => {
+          // This event catches errors during the reading or parsing process
+          console.error('Error reading or parsing CSV file:', error.message);
+      });
+
+  console.log(`Attempting to read CSV file from: ${filePath}`);
+
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 function processDates(inputDictionary) {
+ 
   const monthYearMap = {}; // Store unique month/year with first day
   const processedDates = []; // Array to store the dates in YYYYMMdd format
-
+  
   for (const key in inputDictionary) {
     if (inputDictionary.hasOwnProperty(key)) {
+
+      try {
+
+
       const dateStr = inputDictionary[key].TransactionDate;
 
       // Convert to Date object
       const date = new Date(dateStr);
       if (isNaN(date)) {
-         console.error(`Invalid date string: ${dateStr}`)
+         //console.error(`Invalid date string: ${dateStr}`)
          continue; // skip to next entry
       }
       const year = date.getFullYear();
@@ -115,6 +604,9 @@ function processDates(inputDictionary) {
         processedDates.push(firstDayYYYYMMDD); // for sorting
 
        }
+      } catch (error) {
+        //console.error("An error occurred:", error.message);
+      }
     }
   }
 
@@ -168,6 +660,50 @@ function sortDictionaryByValueDesc(inputDictionary) {
   }
 
   return sortedDictionary;
+}
+
+
+
+/**
+ * Converts a date string from MM/DD/YYYY format to YYYY-MM-DD format using date-fns.
+ *
+ * @param {string} dateStringMDY - The date string in MM/DD/YYYY format (e.g., "12/31/2023").
+ * @returns {string|null} The formatted date string in YYYY-MM-DD format (e.g., "2023-12-31"),
+ *                        or null if the input is invalid.
+ */
+function formatDateMDYtoYMD_datefns(dateStringMDY) {
+  if (!dateStringMDY || typeof dateStringMDY !== 'string') {
+    console.error("Input must be a non-empty string.");
+    return null;
+  }
+
+  // Define the format of the *input* string
+  // See date-fns documentation for format specifiers:
+  // MM = month (01-12), dd = day (01-31), yyyy = year
+  const inputFormat = 'MM/dd/yyyy';
+
+  try {
+    // Parse the string into a Date object based on the expected input format
+    // The third argument (new Date()) is a required reference date for parsing.
+    const parsedDate = parse(dateStringMDY, inputFormat, new Date());
+
+    // Check if parsing resulted in a valid date
+    if (!isValid(parsedDate)) {
+      console.error(`Invalid date string format or value: "${dateStringMDY}". Expected ${inputFormat}.`);
+      return null;
+    }
+
+    // Define the desired *output* format
+    // yyyy = year, MM = month (01-12), dd = day (01-31)
+    const outputFormat = 'yyyy-MM-dd';
+
+    // Format the Date object into the desired output string format
+    return format(parsedDate, outputFormat);
+
+  } catch (error) {
+    console.error(`Error processing date string "${dateStringMDY}":`, error);
+    return null;
+  }
 }
 
 
@@ -402,7 +938,7 @@ function processSpendingCategoryData(dict) {
     });
 
     if (typeValue == "" && categoryValue > 0) {
-      console.log(dict)
+      //console.log(dict)
     }
 
     
@@ -411,10 +947,10 @@ function processSpendingCategoryData(dict) {
     };
 
    
-    if (!spendingData[category] && typeValue != "Payment" && category != "Income" && category != "Way2Save") {
+    if (!spendingData[category] && typeValue != "Payment" && category != "Income" && category != "Way2Save"  && category != "Credit Card Payment" ) {
       spendingData[category]  = { total: 0, items: [] };
     }
-    if (typeValue != "Payment" && category != "Income" && category != "Way2Save") {
+    if (typeValue != "Payment" && category != "Income" && category != "Way2Save" && category != "Credit Card Payment" ) {
       spendingData[category].total += categoryValue*-1;
       spendingData[category].items.push(dict[i]);
     }
@@ -512,52 +1048,52 @@ function getStartAndEndDates(filter) {
 
 
 
-let checkingData = [];
-let savingsData = [];
-let spendingData = {};
-let spendingData0 = {};
-const spendersData = []
-const spendingDict = {}
+// let checkingData = [];
+// let savingsData = [];
+// let spendingData = {};
+// let spendingData0 = {};
+// const spendersData = []
+// const spendingDict = {}
 
 //SPENDING
 // const spending_ds1 = fs.readFileSync('data/'+data_files.spending, {encoding:'utf8'});
 // const spending_transactions = csvToDict(spending_ds1);
 
-data_files.spending.forEach(spender => {
+// data_files.spending.forEach(spender => {
 
-  let spending_ds1 = fs.readFileSync('data/'+spender, {encoding:'utf8'});
-  let spending_transactions = csvToDict(spending_ds1);
+//   let spending_ds1 = fs.readFileSync('data/'+spender, {encoding:'utf8'});
+//   let spending_transactions = csvToDict(spending_ds1);
 
-  spending_transactions.forEach(transaction => {
-    dict_cleanup_category.forEach(category => {
-      if(transaction.Description.includes(category.Description)) {
-        transaction.Category = category.Category;
-      }
-      // console.log(transaction);
-      // console.log(category);
+//   spending_transactions.forEach(transaction => {
+//     dict_cleanup_category.forEach(category => {
+//       if(transaction.Description.includes(category.Description)) {
+//         transaction.Category = category.Category;
+//       }
+//       // console.log(transaction);
+//       // console.log(category);
 
-    });
+//     });
     
-  });
+//   });
 
 
 
-    for (const row of spending_transactions) {
-      const key = Object.values(row)[0]; // first column
-      spendingDict[key] = row;
-    }
+//     for (const row of spending_transactions) {
+//       const key = Object.values(row)[0]; // first column
+//       spendingDict[key] = row;
+//     }
   
-  spendersData.push({ spending_transactions: spending_transactions });
-});
+//   spendersData.push({ spending_transactions: spending_transactions });
+// });
 
 
-const getUniqueCategories = (spender) => {
-  //spendin
-  const categories = spendersData[spender].spending_transactions.map(expense => expense.Category);
-  const array_categories = [...new Set(categories)];
-  const sorted_categories = array_categories.sort();
-  return sorted_categories;
-}
+// const getUniqueCategories = (spender) => {
+//   //spendin
+//   const categories = AccountData[spender].Transactions.map(expense => expense.Category);
+//   const array_categories = [...new Set(categories)];
+//   const sorted_categories = array_categories.sort();
+//   return sorted_categories;
+// }
 
 
 //CHECKING DATA
@@ -620,19 +1156,7 @@ function groupTransactionsByMonth(transactions) {
 
 
 
-let dateFilterDict = {
-  "Last 30 days": "last30Days"
-  ,"Last 3 Months": "last3Months"
-  ,"Last 6 Months": "last6Months"
-  ,"YTD": "ytd"
-  ,"Last Year": "lastYear"
-  ,"Last 2 Years": "last2Years"
-};
 
-const monthYearFilterDict = processDates(spendersData[1].spending_transactions);
-Object.entries(monthYearFilterDict).forEach(([key, value]) => {
-  dateFilterDict[key] = value;
-});
 
 //console.log(dateFilterDict);
 
@@ -643,7 +1167,7 @@ function calculateAverageSpending(category,filter,spender) {
 
   let months = parseInt(monthDiff(startDate,endDate));
 
-  const filteredSpendingCategory = spendersData[spender].spending_transactions.filter(transaction => transaction.Category === category);
+  const filteredSpendingCategory = AccountData[spender].Transactions.filter(transaction => transaction.Category === category);
   const filteredSpending = filteredSpendingCategory.filter(transaction => {
     return new Date(transaction.TransactionDate) >= startDate && new Date(transaction.TransactionDate) <= endDate;
   });
@@ -674,8 +1198,18 @@ app.get('/', (req, res) => {
 // API: Get all unique categories
 app.get('/api/categories/:spender', (req, res) => {
   const spender = req.params.spender;
-  res.json(getUniqueCategories(spender));
+  res.json(Categories);
+  //res.json(getUniqueCategories(spender));
 });
+
+app.get('/api/refreshDataFiles', (req, res) => {
+  importData();
+  // const spender = req.params.spender;
+  // res.json(getUniqueCategories(spender));
+});
+
+
+
 
 // API: Get average spending by category
 app.get('/api/average-spending/:category/:spender', (req, res) => {
@@ -691,7 +1225,7 @@ app.get('/api/expenses/:category/:spender', (req, res) => {
   const spender = req.params.spender;
   
   dateFilterData= getStartAndEndDates('last12Months');
-    const filteredSpendingCategory = spendersData[spender].spending_transactions.filter(transaction => transaction.Category === category);
+    const filteredSpendingCategory = AccountData[spender].Transactions.filter(transaction => transaction.Category === category);
   const filteredSpending = filteredSpendingCategory.filter(transaction => {
     return new Date(transaction.TransactionDate) >= dateFilterData.startDate && new Date(transaction.TransactionDate) <= dateFilterData.endDate;
   });
@@ -738,11 +1272,12 @@ app.get('/api/kpis', async (req, res) => {
     if (isNaN(parsedStartDate) || isNaN(parsedEndDate)) {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.'});
     }
-
-    const filteredSpendings0 = spendersData[0].spending_transactions.filter(transaction => {
+    
+    //const filteredSpendings0 = spendersData[0].spending_transactions.filter(transaction => {
+    const filteredSpendings0 = AccountData[0].Transactions.filter(transaction => {
       return new Date(transaction.TransactionDate) >= parsedStartDate && new Date(transaction.TransactionDate) <= parsedEndDate;
     });
-    const filteredSpendings1 = spendersData[1].spending_transactions.filter(transaction => {
+    const filteredSpendings1 = AccountData[1].Transactions.filter(transaction => {
       return new Date(transaction.TransactionDate) >= parsedStartDate && new Date(transaction.TransactionDate) <= parsedEndDate;
     });
 
@@ -873,7 +1408,7 @@ app.get('/api/spending', async (req, res) => {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.'});
     }
 
-    const filteredSpendings = spendersData[spender].spending_transactions.filter(transaction => {
+    const filteredSpendings = AccountData[spender].Transactions.filter(transaction => {
       return new Date(transaction.TransactionDate) >= parsedStartDate && new Date(transaction.TransactionDate) <= parsedEndDate;
     });
     spendingData = processSpendingCategoryData(filteredSpendings)
