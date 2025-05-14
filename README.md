@@ -35,7 +35,8 @@ Welcome to **Cash Compass**—the financial dashboard that puts your entire fina
 
 
 ## Cash Compass Demo
-https://github.com/user-attachments/assets/2492da73-2b07-4fa0-a145-c8b856e627bf
+![20250121_CashCompassDemoPreview-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/9bf2f87b-9de6-4c3a-a985-312ba8197d22)
+
 
 
 ## 🚀 Getting Started  
