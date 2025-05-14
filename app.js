@@ -71,8 +71,6 @@ async function executeOdbcQueryWithParams(sqlQuery, params = []) {
   }
 }
 
-
-
 async function importData() {
     console.log("\n--- ODBC Example 1: Select Orders by Customer ID and Status ---");
     // Use '?' for placeholders
@@ -743,7 +741,6 @@ function getStartAndEndDates(filter) {
 
 
 //CHECKING DATA
-
 const dict_cschecking_transactions = csvToDict(fs.readFileSync('data/'+data_files.checking, {encoding:'utf8'}));
 const sortedCheckingDataAsc = dict_cschecking_transactions.sort((a, b) => {
   return new Date(a.Date) - new Date(b.Date); //sort oldest to newest
@@ -817,6 +814,23 @@ function calculateAverageSpending(category,filter,spender) {
   return {averageSpending: averageSpending.toFixed(2),totalSpending:totalSpending, category: category, message: "Success"};
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//APIs
 app.get('/', (req, res) => {
   // Wait for data to be processed before rendering the page.  This is a simplified approach.  For production, consider promises or async/await.
   setTimeout(() => {
